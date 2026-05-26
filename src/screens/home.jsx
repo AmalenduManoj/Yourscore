@@ -85,7 +85,7 @@ export function HomeScreen({ user, goTo, onLogout }) {
                     <span>Venue</span>
                     <strong>{featuredMatch.venue || 'TBA'}</strong>
                   </div>
-                  <button type="button">Scorecard</button>
+                  <button type="button" onClick={() => goTo('score', { match: featuredMatch.id })}>Scorecard</button>
                 </div>
               </>
             ) : (
@@ -96,10 +96,10 @@ export function HomeScreen({ user, goTo, onLogout }) {
           <aside className="side-card">
             <h2>Other live matches</h2>
             {liveMatches.slice(1, 3).map((match) => (
-              <a href="#match" className="mini-match" key={match.id}>
+              <button type="button" className="mini-match" onClick={() => goTo('score', { match: match.id })} key={match.id}>
                 <strong>Team {match.team1_id} vs Team {match.team2_id}</strong>
                 <span>{match.team1_score ?? 0}/{match.team1_wickets ?? 0}</span>
-              </a>
+              </button>
             ))}
             {!loading && liveMatches.length <= 1 && <p className="muted">No other live matches.</p>}
           </aside>

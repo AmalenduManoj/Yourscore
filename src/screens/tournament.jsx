@@ -7,6 +7,7 @@ import {
   formatDate,
   findById,
   getResourceId,
+  playerBelongsToTeam,
   playerLabel,
   resolveSelectedId,
   sameId,
@@ -136,7 +137,7 @@ function playerLabelHelper(player) {
   return playerLabel(player)
 }
 
-function TournamentActionForms({ selected, teams, registeredTeams = [], onChanged }) {
+function TournamentActionForms({ selected, teams, players = [], registeredTeams = [], onChanged }) {
   const [selectedTeamIds, setSelectedTeamIds] = useState([])
   const [matchForm, setMatchForm] = useState({
     match_number: '',
@@ -161,6 +162,11 @@ function TournamentActionForms({ selected, teams, registeredTeams = [], onChange
   )
 
   const matchTeams = registeredTeams.length ? registeredTeams : teams
+
+  function rosterCount(teamId) {
+    const team = findById(matchTeams, teamId) || findById(teams, teamId) || { id: teamId }
+    return players.filter((player) => playerBelongsToTeam(player, team)).length
+  }
 
   function toggleAddTeam(teamId) {
     setSelectedTeamIds((current) => {
@@ -210,6 +216,13 @@ function TournamentActionForms({ selected, teams, registeredTeams = [], onChange
 
     if (sameId(matchForm.team1_id, matchForm.team2_id)) {
       setError('Choose two different teams')
+      return
+    }
+
+    const team1Count = rosterCount(matchForm.team1_id)
+    const team2Count = rosterCount(matchForm.team2_id)
+    if (team1Count < 11 || team2Count < 11) {
+      setError(`Both teams need at least 11 players before creating a match. Current roster: ${teamLabelHelper(findById(matchTeams, matchForm.team1_id) || { id: matchForm.team1_id })} ${team1Count}/11, ${teamLabelHelper(findById(matchTeams, matchForm.team2_id) || { id: matchForm.team2_id })} ${team2Count}/11.`)
       return
     }
 
@@ -275,11 +288,11 @@ function TournamentActionForms({ selected, teams, registeredTeams = [], onChange
           <input value={matchForm.match_number} onChange={(event) => setMatchForm((current) => ({ ...current, match_number: event.target.value }))} placeholder="Match no." />
           <select value={matchForm.team1_id} onChange={(event) => setMatchForm((current) => ({ ...current, team1_id: event.target.value }))}>
             <option value="">Team 1</option>
-            {matchTeams.map((team) => <option value={team.id} key={team.id}>{teamLabelHelper(team)}</option>)}
+            {matchTeams.map((team) => <option value={team.id} key={team.id}>{teamLabelHelper(team)} ({rosterCount(team.id)}/11)</option>)}
           </select>
           <select value={matchForm.team2_id} onChange={(event) => setMatchForm((current) => ({ ...current, team2_id: event.target.value }))}>
             <option value="">Team 2</option>
-            {matchTeams.map((team) => <option value={team.id} key={team.id}>{teamLabelHelper(team)}</option>)}
+            {matchTeams.map((team) => <option value={team.id} key={team.id}>{teamLabelHelper(team)} ({rosterCount(team.id)}/11)</option>)}
           </select>
           <input value={matchForm.venue} onChange={(event) => setMatchForm((current) => ({ ...current, venue: event.target.value }))} placeholder="Venue" />
           <input type="number" value={matchForm.total_overs} onChange={(event) => setMatchForm((current) => ({ ...current, total_overs: event.target.value }))} placeholder="Overs" />
@@ -299,6 +312,7 @@ export function TournamentScreen({ user, goTo, onLogout }) {
   const [tournaments, setTournaments] = useState([])
   const [myTournaments, setMyTournaments] = useState([])
   const [allTeams, setAllTeams] = useState([])
+  const [allPlayers, setAllPlayers] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [details, setDetails] = useState(emptyTournamentDetails)
   const [detailsTournamentId, setDetailsTournamentId] = useState(null)
@@ -338,21 +352,23 @@ export function TournamentScreen({ user, goTo, onLogout }) {
       const list = Array.isArray(tournamentsData) ? tournamentsData : []
 
       if (list.length === 0) {
-        return { tournaments: [], myTournaments: [], teams: [], error: '' }
+        return { tournaments: [], myTournaments: [], teams: [], players: [], error: '' }
       }
 
       const myData = await apiRequest('/tournaments/me/list', { headers: authHeaders() }).catch(() => [])
       const teamsData = await apiRequest('/teams/get').catch(() => [])
+      const playersData = await apiRequest('/players').catch(() => [])
 
       return {
         tournaments: list,
         myTournaments: Array.isArray(myData) ? myData : [],
         teams: Array.isArray(teamsData) ? teamsData : [],
+        players: Array.isArray(playersData) ? playersData : [],
         error: '',
       }
     } catch (err) {
       if (err.status === 401) onLogout()
-      return { tournaments: [], myTournaments: [], teams: [], error: err.message }
+      return { tournaments: [], myTournaments: [], teams: [], players: [], error: err.message }
     }
   }, [onLogout])
 
@@ -407,6 +423,7 @@ export function TournamentScreen({ user, goTo, onLogout }) {
       setTournaments(result.tournaments)
       setMyTournaments(result.myTournaments)
       setAllTeams(result.teams)
+      setAllPlayers(result.players)
       setSelectedId((current) => resolveSelectedId(current, result.tournaments))
       setError(result.error)
       setLoading(false)
@@ -461,6 +478,7 @@ export function TournamentScreen({ user, goTo, onLogout }) {
     setTournaments(result.tournaments)
     setMyTournaments(result.myTournaments)
     setAllTeams(result.teams)
+    setAllPlayers(result.players)
     setSelectedId(targetId)
     setError((current) => current || result.error)
     setLoading(false)
@@ -583,13 +601,14 @@ export function TournamentScreen({ user, goTo, onLogout }) {
               {tab === 'matches' && (
                 <section className="tournament-panel">
                   <div className="panel-header"><h2>Matches</h2><span>{visibleDetails.matches.length} total</span></div>
-                  {isOwner && <TournamentActionForms selected={selected} teams={allTeams} registeredTeams={visibleDetails.teams} onChanged={() => loadTournamentDetails(selected.id)} />}
+                  {isOwner && <TournamentActionForms selected={selected} teams={allTeams} players={allPlayers} registeredTeams={visibleDetails.teams} onChanged={() => loadTournamentDetails(selected.id)} />}
                   <div className="match-list">
                     {visibleDetails.matches.map((match) => (
                       <article key={match.id}>
                         <strong>Match {match.match_number}</strong>
                         <span>{getTeamName(match.match_details?.team1_id)} vs {getTeamName(match.match_details?.team2_id)}</span>
                         <small>{match.match_details?.venue} · {match.match_details?.status}</small>
+                        <button type="button" onClick={() => goTo('score', { match: match.match_id || match.id, tournament: selected.id })}>Open score</button>
                       </article>
                     ))}
                     {!detailLoading && detailReady && visibleDetails.matches.length === 0 && <p className="muted">No matches created yet.</p>}
@@ -600,13 +619,14 @@ export function TournamentScreen({ user, goTo, onLogout }) {
               {tab === 'teams' && (
                 <section className="tournament-panel">
                   <div className="panel-header"><h2>Teams</h2><span>{visibleDetails.teams.length} registered</span></div>
-                  {isOwner && <TournamentActionForms selected={selected} teams={allTeams} registeredTeams={visibleDetails.teams} onChanged={() => loadTournamentDetails(selected.id)} />}
+                  {isOwner && <TournamentActionForms selected={selected} teams={allTeams} players={allPlayers} registeredTeams={visibleDetails.teams} onChanged={() => loadTournamentDetails(selected.id)} />}
                   <div className="team-list">
                     {visibleDetails.teams.map((team) => (
                       <article key={team.id}>
                         <strong>{teamLabel(team)}</strong>
                         <span>{team.city || 'Team registered'}</span>
                         <small>ID {team.id}</small>
+                        <button type="button" onClick={() => goTo('team', { id: team.id })}>Team details</button>
                       </article>
                     ))}
                     {!detailLoading && detailReady && visibleDetails.teams.length === 0 && <p className="muted">No teams registered.</p>}

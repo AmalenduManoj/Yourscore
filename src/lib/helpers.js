@@ -74,6 +74,25 @@ export function playerLabel(player) {
   return player?.name || player?.full_name || (player?.id ? `Player ${player.id}` : 'Player')
 }
 
+export function playerTeamIds(player) {
+  const ids = [
+    player?.team_id,
+    player?.teamId,
+    player?.current_team_id,
+    player?.team?.id,
+  ]
+  const teamIds = Array.isArray(player?.team_ids) ? player.team_ids : []
+  return [...ids, ...teamIds].filter((id) => id !== undefined && id !== null && id !== '')
+}
+
+export function playerBelongsToTeam(player, team) {
+  if (!player || !team) return false
+  const ids = playerTeamIds(player)
+  if (ids.some((id) => sameId(id, team.id))) return true
+  const playerTeamName = player.team_name || player.teamName || player.team?.name
+  return Boolean(playerTeamName && teamLabel(team).toLowerCase() === String(playerTeamName).toLowerCase())
+}
+
 export function findById(items, id) {
   return items.find((item) => sameId(item.id, id))
 }

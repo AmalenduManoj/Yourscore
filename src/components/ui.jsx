@@ -93,27 +93,56 @@ export function StatusMessage({ type, children }) {
 }
 
 export function DashboardHeader({ user, active = 'home', goTo, onLogout }) {
+  const navItems = [
+    { key: 'home', label: 'Home', icon: '⌂' },
+    { key: 'matches', label: 'Matches', icon: '⌁' },
+    { key: 'players', label: 'Stats', icon: '▥' },
+    { key: 'teams', label: 'More', icon: '☰' },
+  ]
+  const activeKey = active === 'score'
+    ? 'matches'
+    : active === 'player'
+      ? 'players'
+      : active === 'team' || active === 'tournaments'
+        ? 'teams'
+        : active
+
   return (
-    <header className="topbar">
-      <button className="brand-button" type="button" onClick={() => goTo('home')}>
-        <Logo compact />
-      </button>
-      <nav>
-        <button type="button" className={active === 'home' ? 'active' : ''} onClick={() => goTo('home')}>Home</button>
-        <button type="button" className={active === 'matches' ? 'active' : ''} onClick={() => goTo('matches')}>Matches</button>
-        <button type="button" className={active === 'tournaments' ? 'active' : ''} onClick={() => goTo('tournaments')}>Tournaments</button>
-        <button type="button" className={active === 'teams' ? 'active' : ''} onClick={() => goTo('teams')}>Teams</button>
-        <button type="button" className={active === 'players' ? 'active' : ''} onClick={() => goTo('players')}>Players</button>
-        <button type="button" className={active === 'profile' ? 'active' : ''} onClick={() => goTo('profile')}>Profile</button>
+    <>
+      <header className="topbar">
+        <button className="brand-button" type="button" onClick={() => goTo('home')}>
+          <Logo compact />
+        </button>
+        <nav>
+          <button type="button" className={active === 'home' ? 'active' : ''} onClick={() => goTo('home')}>Home</button>
+          <button type="button" className={active === 'matches' || active === 'score' ? 'active' : ''} onClick={() => goTo('matches')}>Matches</button>
+          <button type="button" className={active === 'tournaments' ? 'active' : ''} onClick={() => goTo('tournaments')}>Tournaments</button>
+          <button type="button" className={active === 'teams' || active === 'team' ? 'active' : ''} onClick={() => goTo('teams')}>Teams</button>
+          <button type="button" className={active === 'players' || active === 'player' ? 'active' : ''} onClick={() => goTo('players')}>Players</button>
+          <button type="button" className={active === 'profile' ? 'active' : ''} onClick={() => goTo('profile')}>Profile</button>
+        </nav>
+        <div className="session">
+          <button className="welcome-button" type="button" onClick={() => goTo('profile')}>
+            Welcome, {user?.email || 'User'}
+          </button>
+          <button type="button" onClick={onLogout} title="Logout" aria-label="Logout">
+            ↪
+          </button>
+        </div>
+      </header>
+      <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+        {navItems.map((item) => (
+          <button
+            className={activeKey === item.key ? 'active' : ''}
+            type="button"
+            onClick={() => goTo(item.key)}
+            key={item.key}
+          >
+            <span>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
       </nav>
-      <div className="session">
-        <button className="welcome-button" type="button" onClick={() => goTo('profile')}>
-          Welcome, {user?.email || 'User'}
-        </button>
-        <button type="button" onClick={onLogout} title="Logout" aria-label="Logout">
-          ↪
-        </button>
-      </div>
-    </header>
+    </>
   )
 }
