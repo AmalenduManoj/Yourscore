@@ -43,6 +43,7 @@ export function tournamentStatus(tournament) {
 }
 
 export function sameId(left, right) {
+  if (left === undefined || left === null || right === undefined || right === null) return false
   return String(left) === String(right)
 }
 
