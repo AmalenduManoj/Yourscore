@@ -1249,6 +1249,41 @@ button.directory-row:focus-visible {
   font-size: 24px;
 }
 
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.roster-row .roster-player {
+  flex: 1;
+}
+
+.roster-remove-btn {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.08);
+  color: #fecaca;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.roster-remove-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.team-owner-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.team-add-card {
+  margin-top: 0.25rem;
+}
+
 .roster-list {
   display: grid;
   gap: 14px;

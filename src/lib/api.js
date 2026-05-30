@@ -4,6 +4,7 @@ export async function apiRequest(path, options = {}) {
   const { headers, ...requestOptions } = options
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'omit',
     ...requestOptions,
     headers: {
       'Content-Type': 'application/json',
