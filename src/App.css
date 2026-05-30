@@ -1284,6 +1284,21 @@ button.directory-row:focus-visible {
   margin-top: 0.25rem;
 }
 
+.playing-xi-card {
+  margin-bottom: 1rem;
+}
+
+.playing-xi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.playing-xi-team h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
 .roster-list {
   display: grid;
   gap: 14px;

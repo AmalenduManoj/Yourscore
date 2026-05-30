@@ -296,11 +296,7 @@ function TournamentActionForms({ selected, teams, players = [], registeredTeams 
           </select>
           <input value={matchForm.venue} onChange={(event) => setMatchForm((current) => ({ ...current, venue: event.target.value }))} placeholder="Venue" />
           <input type="number" value={matchForm.total_overs} onChange={(event) => setMatchForm((current) => ({ ...current, total_overs: event.target.value }))} placeholder="Overs" />
-          <select value={matchForm.status} onChange={(event) => setMatchForm((current) => ({ ...current, status: event.target.value }))}>
-            <option>scheduled</option>
-            <option>live</option>
-            <option>completed</option>
-          </select>
+          <input type="hidden" value="scheduled" readOnly />
         </div>
         <button type="submit" disabled={submitting === 'match'}>{submitting === 'match' ? 'Creating...' : 'Create match'}</button>
       </form>
@@ -607,8 +603,10 @@ export function TournamentScreen({ user, goTo, onLogout }) {
                       <article key={match.id}>
                         <strong>Match {match.match_number}</strong>
                         <span>{getTeamName(match.match_details?.team1_id)} vs {getTeamName(match.match_details?.team2_id)}</span>
-                        <small>{match.match_details?.venue} · {match.match_details?.status}</small>
-                        <button type="button" onClick={() => goTo('score', { match: match.match_id || match.id, tournament: selected.id })}>Open score</button>
+                        <small>{match.match_details?.venue} · {match.match_details?.status || 'scheduled'}</small>
+                        <button type="button" onClick={() => goTo('score', { match: match.match_id || match.id, tournament: selected.id })}>
+                          {match.match_details?.status === 'scheduled' ? 'Set XI & score' : 'Open score'}
+                        </button>
                       </article>
                     ))}
                     {!detailLoading && detailReady && visibleDetails.matches.length === 0 && <p className="muted">No matches created yet.</p>}
